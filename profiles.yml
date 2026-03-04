@@ -1,0 +1,33 @@
+deploy_dbt_ibor:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account: qi64126.central-india.azure
+
+      # User/password auth
+      user: dbt_dev1
+      password: doe
+
+      role: DBT_DEVELOPER
+      database: IBOR_DB
+      warehouse: DBT_WH
+      # in the future you should switch this schema to use a new environment variable
+      # definitely switch this to your schema though
+      schema: public
+      threads: 4
+      client_session_keep_alive: False
+    prod:
+      type: snowflake
+      account: qi64126.central-india.azure
+
+      # User/password auth
+      user: dbt_dev1
+      password: doe
+
+      role: DBT_DEVELOPER
+      database: IBOR_DB
+      warehouse: DBT_WH
+      schema: ibor_prod_schema
+      threads: 4
+      client_session_keep_alive: False
