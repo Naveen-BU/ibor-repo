@@ -3,7 +3,7 @@ deploy_dbt_ibor:
   outputs:
     dev:
       type: snowflake
-      account: qi64126.central-india.azure
+      account: hc01247.central-india.azure
 
       # User/password auth
       user: dbt_dev1
@@ -19,7 +19,7 @@ deploy_dbt_ibor:
       client_session_keep_alive: False
     prod:
       type: snowflake
-      account: qi64126.central-india.azure
+      account: hc01247.central-india.azure
 
       # User/password auth
       user: dbt_dev1
