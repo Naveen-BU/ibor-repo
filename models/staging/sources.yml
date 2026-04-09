@@ -4,7 +4,7 @@ sources:
   - name: raw_data
     description: "Raw data loaded from seed files into Snowflake. In production, this would be data from OMS, custodian feeds, and market data vendors."
     database: IBOR_DB
-    schema: PUBLIC_RAW_DATA
+    schema: RAW_DATA
     
     tables:
       - name: securities_master
