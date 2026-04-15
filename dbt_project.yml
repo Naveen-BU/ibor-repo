@@ -16,6 +16,9 @@ clean-targets:
   - "target"
   - "dbt_packages"
 
+on-run-end:
+  - "{{ log_dq_results(results) }}"
+
 vars:
   # Default date range for incremental models
   start_date: '2024-01-01'
