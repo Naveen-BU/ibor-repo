@@ -1,0 +1,126 @@
+version: 2
+
+models:
+  # ---- Staging (Bronze) ----
+  - name: stg_fx_rates
+    description: "Cleaned FX exchange rates with inverse rates"
+    columns:
+      - name: rate_id
+        tests: [not_null, unique]
+      - name: exchange_rate
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 100000
+
+  - name: stg_portfolios
+    description: "Cleaned portfolio master data"
+    columns:
+      - name: portfolio_id
+        tests: [not_null, unique]
+      - name: base_currency
+        tests:
+          - accepted_values:
+              values: ['USD', 'GBP', 'EUR', 'AUD', 'CAD', 'JPY', 'CHF', 'INR']
+
+  - name: stg_securities
+    description: "Cleaned security reference master"
+    columns:
+      - name: security_id
+        tests: [not_null, unique]
+      - name: isin
+        tests: [not_null, unique]
+      - name: asset_class
+        tests:
+          - accepted_values:
+              values: ['Equity', 'Fixed Income', 'Commodity', 'FX', 'Derivative']
+
+  - name: stg_security_prices
+    description: "Cleaned daily security prices"
+    columns:
+      - name: price_id
+        tests: [not_null, unique]
+      - name: close_price
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 1000000
+
+  - name: stg_transactions
+    description: "Cleaned trade transactions"
+    columns:
+      - name: transaction_id
+        tests: [not_null, unique]
+      - name: transaction_type
+        tests:
+          - accepted_values:
+              values: ['BUY', 'SELL']
+      - name: quantity
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+      - name: transaction_amount
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+
+  # ---- Intermediate (Silver) ----
+  - name: int_dim_security
+    description: "Conformed security dimension"
+    columns:
+      - name: security_id
+        tests: [not_null, unique]
+
+  - name: int_dim_portfolio
+    description: "Conformed portfolio dimension"
+    columns:
+      - name: portfolio_id
+        tests: [not_null, unique]
+
+  - name: int_fact_transactions
+    description: "Enriched transactions with USD amounts"
+    columns:
+      - name: transaction_id
+        tests: [not_null, unique]
+      - name: portfolio_id
+        tests:
+          - relationships:
+              to: ref('int_dim_portfolio')
+              field: portfolio_id
+      - name: security_id
+        tests:
+          - relationships:
+              to: ref('int_dim_security')
+              field: security_id
+      - name: amount_usd
+        tests: [not_null]
+
+  # ---- Marts (Gold) ----
+  - name: mart_portfolio_summary
+    description: "Portfolio-level AUM and trading summary"
+    columns:
+      - name: portfolio_id
+        tests: [not_null, unique]
+
+  - name: mart_position_valuation
+    description: "Current position valuations with P&L"
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [portfolio_id, security_id]
+
+  - name: mart_currency_exposure
+    description: "Currency exposure breakdown per portfolio"
+
+  - name: mart_sector_analysis
+    description: "Sector allocation analysis per portfolio"
+
+  - name: mart_risk_metrics
+    description: "Portfolio risk metrics and concentration"
+    columns:
+      - name: portfolio_id
+        tests: [not_null, unique]
+
+  - name: mart_trading_activity
+    description: "Broker and trade flow analytics"

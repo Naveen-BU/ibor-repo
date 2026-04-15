@@ -1,48 +1,35 @@
-{{
-    config(
-        materialized='view',
-        tags=['staging', 'transactions']
-    )
-}}
+-- models/staging/stg_transactions.sql
+-- Staging model: Clean and type-cast transactions
 
--- Clean and type transaction data from raw source
-with source as (
-    select * from {{ source('raw_data', 'transactions') }}
+WITH source AS (
+    SELECT * FROM {{ source('bronze', 'raw_transactions') }}
 ),
 
-renamed as (
-    select
-        -- Primary key
-        transaction_id,
-        
-        -- Foreign keys
-        portfolio_id,
-        security_id,
-        
-        -- Transaction details
-        transaction_date::date as transaction_date,
-        settlement_date::date as settlement_date,
-        transaction_type,
-        
-        -- Quantities and amounts
-        quantity::number(18,4) as quantity,
-        price::number(18,4) as price,
-        transaction_amount::number(18,2) as transaction_amount,
-        currency,
-        
-        -- Execution details
-        broker,
-        trader_id,
-        status,
-        
-        -- Audit timestamps
-        created_at::timestamp as created_at,
-        updated_at::timestamp as updated_at,
-        
-        -- Metadata
-        current_timestamp() as dbt_loaded_at
-        
-    from source
+cleaned AS (
+    SELECT
+        TRIM(transaction_id)                         AS transaction_id,
+        TRIM(portfolio_id)                           AS portfolio_id,
+        TRIM(security_id)                            AS security_id,
+        TRY_TO_DATE(transaction_date, 'YYYY-MM-DD')  AS transaction_date,
+        TRY_TO_DATE(settlement_date, 'YYYY-MM-DD')   AS settlement_date,
+        UPPER(TRIM(transaction_type))                AS transaction_type,
+        TRY_TO_NUMBER(quantity, 18, 4)                AS quantity,
+        TRY_TO_NUMBER(price, 18, 6)                   AS price,
+        TRY_TO_NUMBER(transaction_amount, 18, 4)      AS transaction_amount,
+        UPPER(TRIM(currency))                        AS currency,
+        TRIM(broker)                                 AS broker,
+        TRIM(trader_id)                              AS trader_id,
+        UPPER(TRIM(status))                          AS status,
+        TRY_TO_TIMESTAMP_NTZ(created_at)              AS created_at,
+        TRY_TO_TIMESTAMP_NTZ(updated_at)              AS updated_at,
+        _loaded_at,
+        _source_file
+    FROM source
+    WHERE transaction_id IS NOT NULL
+    QUALIFY ROW_NUMBER() OVER (PARTITION BY transaction_id ORDER BY _loaded_at DESC) = 1
 )
 
-select * from renamed
+SELECT
+    *,
+    DATEDIFF('day', transaction_date, settlement_date) AS settlement_days
+FROM cleaned

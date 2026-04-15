@@ -1,33 +1,36 @@
-deploy_dbt_ibor:
+portfolio_analytics:
   target: dev
   outputs:
     dev:
       type: snowflake
-      account: qi64126.central-india.azure
+      account: hc01247.central-india.azure
 
       # User/password auth
-      user: dbt_dev1
+      user: DBT_SERVICE_USER
       password: doe
 
-      role: DBT_DEVELOPER
-      database: IBOR_DB
-      warehouse: DBT_WH
+      role: DBT_ROLE
+      database: PORTFOLIO_ANALYTICS
+      warehouse: PORTFOLIO_WH
       # in the future you should switch this schema to use a new environment variable
       # definitely switch this to your schema though
-      schema: public
+      schema: SILVER
       threads: 4
       client_session_keep_alive: False
+      query_tag: 'dbt_cloud'
+
     prod:
       type: snowflake
-      account: qi64126.central-india.azure
+      account: hc01247.central-india.azure
 
       # User/password auth
-      user: dbt_dev1
+      user: DBT_SERVICE_USER
       password: doe
 
-      role: DBT_DEVELOPER
-      database: IBOR_DB
+      role: DBT_ROLE
+      database: PORTFOLIO_ANALYTICS
       warehouse: DBT_WH
-      schema: ibor_prod_schema
+      schema: SILVER
       threads: 4
       client_session_keep_alive: False
+      query_tag: 'dbt_cloud_prod'
